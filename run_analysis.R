@@ -76,4 +76,4 @@ q5data <- group_by(q2data,subject, activity)
 
 #5.2 creating the new data set with only the average of each variable for each activity and each subject
 q5smalltable<-summarize_each(q5data, mean)
-write.table(q5smalltable, "tidy_output.txt")
+write.table(q5smalltable, "tidy_output.txt", row.names = FALSE)

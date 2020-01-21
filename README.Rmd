@@ -1,0 +1,112 @@
+---
+title: "Step_description_Cleaning_Data_Project"
+author: "Nicolas Saunier"
+date: "21/01/2020"
+output: html_document
+---
+# Description of the steps used to process the data
+
+## Step 1: merge the training and test sets to create one data set
+
+We start by gathering the data from the different tables. There are six different text files which we need to  read as R dataframes. The read.table function with its basic parameters can be used to read these files.
+
+```{r}
+subject_test <- read.table("UCI_HAR_Dataset/test/subject_test.txt")
+X_test <- read.table ("UCI_HAR_Dataset/test/X_test.txt")
+y_test <- read.table("UCI_HAR_Dataset/test/y_test.txt")
+subject_train <- read.table("UCI_HAR_Dataset/train/subject_train.txt")
+X_train <- read.table("UCI_HAR_Dataset/train/X_train.txt")
+y_train <- read.table("UCI_HAR_Dataset/train/y_train.txt")
+```
+
+We then look at the dimensions of the dataframes to see how they merge.
+
+```{r}
+dim(subject_test)
+dim(X_test)
+dim(y_test)
+dim(subject_train)
+dim(X_train)
+dim(y_train)
+```
+
+All of the dfs with test have 2947 rows, all of the dfs with train have 7352 rows, therefore we can bind these dfs by columns.
+We then get two dataframes with the same number of dimensions, which we can bind by rows.
+```{r}
+full_test <- cbind(subject_test, y_test, X_test)
+full_train <- cbind(subject_train, y_train, X_train)
+full_data <- rbind(full_test, full_train)
+```
+
+## Step 2: Extract only the measurements on the mean and standard deviation for each measurement.
+
+We start by looking at the features document to see what each column represents.
+```{r}
+features <- read.table("UCI_HAR_Dataset/features.txt", as.is=TRUE)
+head(features)
+```
+
+We can see that in column 2 of the features table, some of the names have mean and some have std. We will keep all elements that contain either mean or std, NO MATTER WHERE the word appears.
+It is also important to keep the data about the subject and the activity, which are columns 1 and 2 of our merged dataframe. 
+Since the data in features was about the columns before the dataframes were merged, we add 2 to the vectors
+of indices cmn and csd to have the correct indices of the columns to keep in our merged dataframe.
+We can then subset the full_data table based on these column indices, and assign this to a new object (q2data).
+
+```{r}
+cmn<-grep("mean", features$V2)
+csd<-grep("std", features$V2)
+keptcols <- c(1,2,cmn+2,csd+2)
+q2data<- full_data[,keptcols]
+```
+
+## Step 3: Use descriptive activity names to name the activities in the data set
+
+The activities were indexed in the y_test and y_train tables, which are now in our second column. Up to this point this column is numeric, so we turn it into a factor.
+We then obtain the activity names from the file activity_labels, and use these labels as levels of the factor.
+
+```{r}
+q2data[,2]<- as.factor(q2data[,2])
+
+activity_labels <- read.table("UCI_HAR_Dataset/activity_labels.txt", as.is=TRUE)
+activity_labels <- activity_labels[,2]
+
+levels(q2data[,2])<-activity_labels
+```
+
+## Step 4: Appropriately label the data set with descriptive variable names.
+
+The first two columns of our data set should be called subject and activity. For the rest of the columns, the names are in the features table which has already been imported as an R object. However, there are certain problems with the names which we need to address, so that these names are descriptive and respectful of good naming practices.
+- make everything lower case to avoid typos
+- remove all special characters, replacing with "." if it makes sense to do so (parentheses are just removed)
+- replace all of the text which starts with "t" so that it starts with "time of"
+- replace all of the text which starts with "f" so that it starts with "frequency"
+
+```{r}
+propernames<- features$V2[c(cmn, csd)]
+propernames<- tolower(propernames)
+propernames<-sub("^t","time.of.",propernames)
+propernames<-sub("^f","freq.of.",propernames)
+propernames<- gsub("-",".",propernames)
+propernames <- gsub("\\()","",propernames)
+propernames<- gsub("acc","acceleration",propernames)
+allnames <- c("subject", "activity",propernames)
+names(q2data)<-allnames
+```
+
+## Step 5: From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject
+
+We start by grouping the data by activity and subject:
+
+```{r}
+library(dplyr)
+q5data <- group_by(q2data,subject, activity)
+```
+
+Then we create the new data set with only the average of each variable for each activity and each subject:
+
+```{r}
+q5smalltable<-summarize_each(q5data, mean)
+write.table(q5smalltable, "tidy_output.txt")
+```
+
+The output is tidy data, as it contains one variable per column and one observation per row. All of the variables are properly named, and the table contains only one type of observational unit.

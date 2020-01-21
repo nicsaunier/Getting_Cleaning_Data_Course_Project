@@ -19,9 +19,9 @@ The activity that the subject was doing when the measurement was taken.
 
 Columns 3-81 represent the mean of all the measurements which were taken for a particular type of observation for a subject_activity pair.
 
-3: time.of.bodyacceleration.mean.x
-4: time.of.bodyacceleration.mean.y
-5: time.of.bodyacceleration.mean.z
+3: time.of.bodyacceleration.mean.x  
+4: time.of.bodyacceleration.mean.y  
+5: time.of.bodyacceleration.mean.z  
 6: time.of.gravityacceleration.mean.x
 7: time.of.gravityacceleration.mean.y
 8: time.of.gravityacceleration.mean.z
